@@ -1,65 +1,65 @@
 <?php
+namespace Image;
 
-namespace App\Controllers;
-
-class ISSController
+interface ResizeStrategy
 {
-    function resizeImageContain($imageA, $imageB)
-    {
-        $targetWidth = $imageA['Width'];
-        $targetHeight = $imageA['Height'];
-
-        $sourceWidth = $imageB['Width'];
-        $sourceHeight = $imageB['Height'];
-
-        $sourceRatio = $sourceWidth / $sourceHeight;
-        $targetRatio = $targetWidth / $targetHeight;
-
-        if ($sourceRatio > $targetRatio) {
-            $resizeWidth = $targetWidth;
-            $resizeHeight = $targetWidth / $sourceRatio;
-        } else {
-            $resizeWidth = $targetHeight * $sourceRatio;
-            $resizeHeight = $targetHeight;
-        }
-
-        return ['Width' => $resizeWidth, 'Height' => $resizeHeight];
-    }
-
-
-    function resizeImageCover($imageA, $imageB)
-    {
-        $targetWidth = $imageA['Width'];
-        $targetHeight = $imageA['Height'];
-
-        $sourceWidth = $imageB['Width'];
-        $sourceHeight = $imageB['Height'];
-
-        if ($sourceWidth > $targetWidth) {
-            $resizeWidth = $sourceWidth;
-        } else {
-            $resizeWidth = $targetWidth;
-        }
-
-        if ($sourceHeight > $targetHeight) {
-            $resizeHeight = $sourceHeight;
-        } else {
-            $resizeHeight = $targetHeight;
-        }
-
-        return ['Width' => $resizeWidth, 'Height' => $resizeHeight];
-    }
+    public function calculateSize(array $imageA, array $imageB): array;
 }
 
-$controll = new ISSController();
+class ContainStrategy implements ResizeStrategy
+{
+public function calculateSize(array $imageA, array $imageB): array{
+   $widthRatio = $imageA['width'] / $imageB['width'];
+$heightRatio = $imageA['height'] / $imageB['height'];
+ $ratio = min($widthRatio, $heightRatio);
 
-$imageA = ['Width' => 180, 'Height' => 250];
-$imageB = ['Width' => 360, 'Height' => 200];
+$width = $imageB['width'] * $ratio;
+$height = $imageB['height'] * $ratio;
 
-$resizedImageContain = $controll->resizeImageContain($imageA, $imageB);
-$resizedImageCover = $controll->resizeImageCover($imageA, $imageB);
+ return ['width' => $width, 'height' => $height];
+}
+}
 
-echo "Resized imageB Contain width: " . $resizedImageContain['Width'] . ", height: " . $resizedImageContain['Height'] . PHP_EOL;
 
+class CoverStrategy implements ResizeStrategy
+{
+ public function calculateSize(array $imageA, array $imageB): array
+ {
+ $widthRatio = $imageA['width'] / $imageB['width'];
+$heightRatio = $imageA['height'] / $imageB['height'];
 
-echo "Resized imageB Cover width: " . $resizedImageCover['Width'] . ", height: " . $resizedImageCover['Height'] . PHP_EOL;
+ $ratio = max($widthRatio, $heightRatio);
+
+ $width = $imageB['width'] * $ratio;
+ $height = $imageB['height'] * $ratio;
+
+ return ['width' => $width, 'height' => $height];
+ }
+}
+
+class ImageResizer
+{
+private $strategy;
+
+ public function __construct(ResizeStrategy $strategy)
+ {
+$this->strategy = $strategy;
+}
+
+public function resize(array $imageA, array $imageB): array
+{
+return $this->strategy->calculateSize($imageA, $imageB);
+}
+}
+
+// Example usage
+$imageA = ['width' => 250, 'height' => 500];
+$imageB = ['width' => 500, 'height' => 90];
+
+$resizer = new ImageResizer(new ContainStrategy());
+$output = $resizer->resize($imageA, $imageB);
+print_r($output);
+
+$resizer = new ImageResizer(new CoverStrategy());
+$output = $resizer->resize($imageA, $imageB);
+print_r($output); 
